@@ -15,6 +15,8 @@ public class HeapDijkstra {
     private PriorityQueue<DijkVertex> heap;
     /* Shortest path length information to each vertex */
     private int[] shortestPathLengths;
+    /* weights of each vertex used to reweight edges for Johnson's algorithm */
+    private Map<Integer, Integer> johnsonWeights;
 
     /**
      * Initializes a HeapDijkstra object from a graph file, use this constructor
@@ -34,7 +36,7 @@ public class HeapDijkstra {
             String[] splitLine = line.split(" ");
             int numVertices = Integer.parseInt(splitLine[0]);
             int numEdges = Integer.parseInt(splitLine[1]);
-            edgeMappings = new HashMap<>(numEdges);
+            edgeMappings = new HashMap<>(numVertices);
             edgeToCost = new HashMap<>(numEdges);
             heap = new PriorityQueue<>(numVertices);
             /* + 1 because we're not using the 0th index, starting at 1 instead (to avoid confusion) */
@@ -87,11 +89,12 @@ public class HeapDijkstra {
      * @param numVertices number of vertices in the graph
      */
     public HeapDijkstra(Map<Integer, List<Integer>> edgeMappings
-            , Map<Edge, Integer> edgeToCost, int numVertices) {
+            , Map<Edge, Integer> edgeToCost, Map<Integer, Integer> johnsonWeights, int numVertices) {
         this.edgeMappings = edgeMappings;
         this.edgeToCost = edgeToCost;
         /* + 1 because we're not using the 0th index */
         this.shortestPathLengths = new int[numVertices + 1];
+        this.johnsonWeights = johnsonWeights;
     }
 
     /**
@@ -110,6 +113,9 @@ public class HeapDijkstra {
             shortestPathLengths[minVertex.vertex] = minVertex.dijkScore;
             for (Integer connectedVertex : edgeMappings.get(minVertex.vertex)) {
                 DijkVertex dijkVertex = new DijkVertex(connectedVertex, Integer.MAX_VALUE);
+                /* If the heap still contains the connected vertex, then its shortest path hasn't been
+                ** calculated yet. Remove and reinsert to update its Dijkstra greedy score
+                 */
                 if (heap.contains(dijkVertex)) {
                     Edge edge = new Edge(minVertex.vertex, connectedVertex);
                     int edgeCost = edgeToCost.get(edge);
