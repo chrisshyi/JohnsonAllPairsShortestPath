@@ -15,7 +15,7 @@ public class HeapDijkstra {
     private PriorityQueue<DijkVertex> heap;
     /* Shortest path length information to each vertex */
     private int[] shortestPathLengths;
-    /* weights of each vertex used to reweight edges for Johnson's algorithm */
+    /* weights for each vertex that were used to reweigh edges for Johnson's algorithm */
     private Map<Integer, Integer> johnsonWeights;
 
     /**
@@ -34,6 +34,12 @@ public class HeapDijkstra {
             /* Consume the first line */
             line = br.readLine();
             String[] splitLine = line.split(" ");
+            /*
+            ** Assume the graph is stored in the format:
+            *  tail_vertex head_vertex edge_length
+            *
+            *  With the first line: number_of_vertices number_of_edges
+             */
             int numVertices = Integer.parseInt(splitLine[0]);
             int numEdges = Integer.parseInt(splitLine[1]);
             edgeMappings = new HashMap<>(numVertices);
@@ -95,6 +101,15 @@ public class HeapDijkstra {
         /* + 1 because we're not using the 0th index */
         this.shortestPathLengths = new int[numVertices + 1];
         this.johnsonWeights = johnsonWeights;
+        this.heap = new PriorityQueue<>();
+
+        /* key 0 is an artifact of Bellman-Ford, remove it */
+        edgeMappings.remove(0);
+
+        /* Initialize the heap */
+        for (int i = 1; i <= numVertices; i++) {
+            heap.add(new DijkVertex(i, Integer.MAX_VALUE));
+        }
     }
 
     /**
@@ -108,8 +123,10 @@ public class HeapDijkstra {
          */
         heap.remove(sourceVertex);
         heap.add(sourceVertex);
+        /* Main loop of Dijkstra's shortest path algorithm */
         while (heap.size() != 0) {
             DijkVertex minVertex = heap.poll();
+            System.out.printf("Dijkstra, source: %d, minVertex: %d\n", source, minVertex.getVertex());
             shortestPathLengths[minVertex.vertex] = minVertex.dijkScore;
             for (Integer connectedVertex : edgeMappings.get(minVertex.vertex)) {
                 DijkVertex dijkVertex = new DijkVertex(connectedVertex, Integer.MAX_VALUE);
@@ -124,6 +141,14 @@ public class HeapDijkstra {
                     heap.add(dijkVertex);
                 }
             }
+        }
+
+        /* The calculated shortest path lengths are offset by p(source) - p(dest), subtract this quantity
+        ** to get the real shortest path length
+         */
+        for (int i = 1; i < shortestPathLengths.length; i++) {
+            int shortestPathLength = shortestPathLengths[i];
+            shortestPathLengths[i] = shortestPathLength - (johnsonWeights.get(source) - johnsonWeights.get(i));
         }
         return this.shortestPathLengths;
     }
@@ -162,11 +187,17 @@ public class HeapDijkstra {
 
             DijkVertex that = (DijkVertex) o;
 
+            /*
+             * We only care about the vertex for equality, not the Dijkstra greedy score
+             */
             return vertex == that.vertex;
         }
 
         @Override
         public int hashCode() {
+            /*
+            ** Again, we only care about the vertex
+             */
             return vertex;
         }
 
