@@ -1,4 +1,6 @@
-package main;
+package main.java;
+
+import javafx.scene.Parent;
 
 import java.io.*;
 import java.util.*;
@@ -79,19 +81,28 @@ public class BellmanFord {
                 reverseEdgeMappings.put(head, tailVertices);
                 Edge edge = new Edge(tail, head);
                 edgeToCost.put(edge, cost);
+            }
+            /*
+             * Add vertex 0 if running Johnson's algorithm
+             */
+            if (johnson) {
+                List<Integer> additionalEdges = new ArrayList<>(numVertices);
+                for (int i = 1; i <= numVertices; i++) {
+                    additionalEdges.add(i);
+                    Edge addEdge = new Edge(0, i);
+                    edgeToCost.put(addEdge, 0);
 
-                /*
-                 * Add vertex 0 if running Johnson's algorithm
-                 */
-                if (johnson) {
-                    List<Integer> additionalEdges = new ArrayList<>(numVertices);
-                    for (int i = 1; i <= numVertices; i++) {
-                        additionalEdges.add(i);
-                        Edge addEdge = new Edge(0, i);
-                        edgeToCost.put(addEdge, 0);
+                    List<Integer> reverseMappingVertices;
+                    if (reverseEdgeMappings.containsKey(i)) {
+                        reverseMappingVertices = reverseEdgeMappings.get(i);
+                    } else {
+                        reverseMappingVertices = new ArrayList<>();
                     }
-                    edgeMappings.put(0, additionalEdges);
+                    reverseMappingVertices.add(0);
+                    reverseEdgeMappings.put(i, reverseMappingVertices);
                 }
+                edgeMappings.put(0, additionalEdges);
+
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -132,7 +143,7 @@ public class BellmanFord {
                 int secondCase = Integer.MAX_VALUE;
                 for (Integer tailVertex : reverseEdgeMappings.get(vert)) {
                     Edge edge = new Edge(tailVertex, vert);
-                    int candidate = constrainedPathLengths[i - 1][tailVertex] + edgeToCost.get(edge);
+                    int candidate = getCandidateValue(constrainedPathLengths[i - 1][tailVertex], edgeToCost.get(edge));
                     if (candidate < secondCase) {
                         secondCase = candidate;
                     }
@@ -151,7 +162,7 @@ public class BellmanFord {
             int secondCase = Integer.MAX_VALUE;
             for (Integer tailVertex : reverseEdgeMappings.get(vert)) {
                 Edge edge = new Edge(tailVertex, vert);
-                int candidate = constrainedPathLengths[numVertices - 1][tailVertex] + edgeToCost.get(edge);
+                int candidate = getCandidateValue(constrainedPathLengths[numVertices - 1][tailVertex], edgeToCost.get(edge));
                 if (candidate < secondCase) {
                     secondCase = candidate;
                 }
@@ -208,5 +219,22 @@ public class BellmanFord {
 
     public int getNumVertices() {
         return this.numVertices;
+    }
+
+    public Map<Integer, List<Integer>> getReverseEdgeMappings() {
+        return this.reverseEdgeMappings;
+    }
+
+    private boolean overflow(long value, long toAdd) {
+        return value == Integer.MAX_VALUE || value + toAdd > Integer.MAX_VALUE;
+    }
+
+    private int getCandidateValue(int value, int toAdd) {
+        if (overflow((long) value, (long) toAdd)) {
+            value = Integer.MAX_VALUE;
+        } else {
+            value += toAdd;
+        }
+        return value;
     }
 }

@@ -1,4 +1,4 @@
-package main;
+package main.java;
 
 /**
  * Represents a directed edge in a graph
