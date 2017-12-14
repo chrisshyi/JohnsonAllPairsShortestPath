@@ -144,6 +144,10 @@ public class HeapDijkstra {
         /* Main loop of Dijkstra's shortest path algorithm */
         while (heap.size() != 0) {
             DijkVertex minVertex = heap.poll();
+            /* Remove the dequeued vertex from the score keeping map since we don't
+            ** need to keep track of its score anymore
+             */
+            this.dijkScoreMap.remove(minVertex.vertex);
             System.out.printf("Dijkstra, source: %d, minVertex: %d\n", source, minVertex.getVertex());
             shortestPathLengths[minVertex.vertex] = minVertex.dijkScore;
             if (edgeMappings.containsKey(minVertex.vertex)) {
