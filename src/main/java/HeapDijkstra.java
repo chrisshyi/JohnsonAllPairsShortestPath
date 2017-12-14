@@ -17,6 +17,8 @@ public class HeapDijkstra {
     private int[] shortestPathLengths;
     /* weights for each vertex that were used to reweigh edges for Johnson's algorithm */
     private Map<Integer, Integer> johnsonWeights;
+    /* maps vertices to their Dijkstra greedy scores */
+    private Map<Integer, Integer> dijkScoreMap;
 
     /**
      * Initializes a HeapDijkstra object from a graph file, use this constructor
@@ -45,6 +47,7 @@ public class HeapDijkstra {
             edgeMappings = new HashMap<>(numVertices);
             edgeToCost = new HashMap<>(numEdges);
             heap = new PriorityQueue<>(numVertices);
+            dijkScoreMap = new HashMap<>();
             /* + 1 because we're not using the 0th index, starting at 1 instead (to avoid confusion) */
             shortestPathLengths = new int[numVertices + 1];
 
@@ -69,17 +72,28 @@ public class HeapDijkstra {
                 int tailScore = Integer.MAX_VALUE;
                 int headScore = Integer.MAX_VALUE;
 
-//                if (tail == source) {
-//                    tailScore = 0;
-//                }
-//                if (head == source) {
-//                    headScore = 0;
-//                }
                 DijkVertex tailVertex = new DijkVertex(tail, tailScore);
                 DijkVertex headVertex = new DijkVertex(head, headScore);
+                dijkScoreMap.put(tail, tailScore);
+                dijkScoreMap.put(head, headScore);
+                if (!heap.contains(tailVertex)) {
+                    heap.add(tailVertex);
+                }
+                if (!heap.contains(headVertex)) {
+                    heap.add(headVertex);
+                }
 
-                heap.add(tailVertex);
-                heap.add(headVertex);
+
+                /*
+                 * Using this constructor means we're not using Dijkstra's algorithm in conjunction with
+                 * the Bellman-Ford algorithm to form Johnson's algorithm. We still need to initialize a
+                 * dummy johnsonWeights HashMap though, or else an NPE will be thrown when calculating
+                 * shortest path lengths
+                 */
+                this.johnsonWeights = new HashMap<>();
+                for (int i = 1; i <= numVertices; i++) {
+                    this.johnsonWeights.put(i, 0);
+                }
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -102,6 +116,10 @@ public class HeapDijkstra {
         this.shortestPathLengths = new int[numVertices + 1];
         this.johnsonWeights = johnsonWeights;
         this.heap = new PriorityQueue<>();
+        this.dijkScoreMap = new HashMap<>();
+        for (int i = 1; i <= numVertices; i++) {
+            dijkScoreMap.put(i, Integer.MAX_VALUE);
+        }
 
         /* key 0 is an artifact of Bellman-Ford, remove it */
         edgeMappings.remove(0);
@@ -128,17 +146,23 @@ public class HeapDijkstra {
             DijkVertex minVertex = heap.poll();
             System.out.printf("Dijkstra, source: %d, minVertex: %d\n", source, minVertex.getVertex());
             shortestPathLengths[minVertex.vertex] = minVertex.dijkScore;
-            for (Integer connectedVertex : edgeMappings.get(minVertex.vertex)) {
-                DijkVertex dijkVertex = new DijkVertex(connectedVertex, Integer.MAX_VALUE);
-                /* If the heap still contains the connected vertex, then its shortest path hasn't been
-                ** calculated yet. Remove and reinsert to update its Dijkstra greedy score
-                 */
-                if (heap.contains(dijkVertex)) {
-                    Edge edge = new Edge(minVertex.vertex, connectedVertex);
-                    int edgeCost = edgeToCost.get(edge);
-                    heap.remove(dijkVertex);
-                    dijkVertex.setDijkScore(edgeCost);
-                    heap.add(dijkVertex);
+            if (edgeMappings.containsKey(minVertex.vertex)) {
+                for (Integer connectedVertex : edgeMappings.get(minVertex.vertex)) {
+                    DijkVertex dijkVertex = new DijkVertex(connectedVertex, Integer.MAX_VALUE);
+                    /*
+                     * If the heap still contains the connected vertex, then its shortest path hasn't been
+                     * calculated yet. Remove and reinsert to update its Dijkstra greedy score
+                     */
+                    if (heap.contains(dijkVertex)) {
+                        Edge edge = new Edge(minVertex.vertex, connectedVertex);
+                        int edgeCost = edgeToCost.get(edge);
+                        heap.remove(dijkVertex);
+                        int oldScore = dijkScoreMap.get(connectedVertex);
+                        int newScore = Math.min(oldScore, minVertex.dijkScore + edgeCost);
+                        dijkVertex.setDijkScore(newScore);
+                        dijkScoreMap.put(connectedVertex, newScore);
+                        heap.add(dijkVertex);
+                    }
                 }
             }
         }
@@ -152,6 +176,19 @@ public class HeapDijkstra {
         }
         return this.shortestPathLengths;
     }
+
+    public Map<Integer, List<Integer>> getEdgeMappings() {
+        return edgeMappings;
+    }
+
+    public Map<Edge, Integer> getEdgeToCost() {
+        return edgeToCost;
+    }
+
+    public int[] getShortestPathLengths() {
+        return shortestPathLengths;
+    }
+
     /**
      * Combines a vertex with its Dijkstra greedy score
      */

@@ -178,9 +178,9 @@ public class BellmanFord {
         }
         for (int i = 1; i <= numVertices; i++) {
             if (i == source) {
-                shortestPathLengths.put(i, 0);
+                this.shortestPathLengths.put(i, 0);
             } else {
-                shortestPathLengths.put(i, constrainedPathLengths[numVertices - 1][i]);
+                this.shortestPathLengths.put(i, constrainedPathLengths[numVertices - 1][i]);
             }
         }
         /* Reweigh the edges if Johnson's algorithm is to be carried out */
@@ -193,8 +193,8 @@ public class BellmanFord {
                 if (edge.getTail() == 0) {
                     continue;
                 }
-                int newCost = entry.getValue() + shortestPathLengths.get(edge.getHead())
-                        - shortestPathLengths.get(edge.getTail());
+                int newCost = entry.getValue() + shortestPathLengths.get(edge.getTail())
+                        - shortestPathLengths.get(edge.getHead());
                 edgeToCost.put(edge, newCost);
             }
         }

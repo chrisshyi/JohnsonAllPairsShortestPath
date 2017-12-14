@@ -12,15 +12,17 @@ import java.util.Map;
 
 
 class BellmanFordTest {
-    BellmanFord bmFord;
-    Map<Integer, List<Integer>> edgeMappings;
-    Map<Edge, Integer> edgeCosts;
-    Map<Integer, List<Integer>> reverseMappings;
+    private BellmanFord bmFord;
+    private Map<Integer, List<Integer>> edgeMappings;
+    private Map<Edge, Integer> edgeCosts;
+    private Map<Integer, List<Integer>> reverseMappings;
 
-    /* Test if the graph data is set up correctly for Johnson's algorithm */
+    /**
+     *  Tests if the graph data is set up correctly for Johnson's algorithm
+     */
     @Test
-    void johnsonSetup() throws FileNotFoundException {
-        initializeBMFord("/home/chris/WorkSpace/Java/JohnsonAPSP/src/main/test/testinput/test1.txt");
+    void johnsonSetup() {
+        initializeBMFord(System.getProperty("user.dir") + "/src/main/test/testinput/bellmanford/test1.txt");
 
         assertEquals(edgeMappings.get(1).size(), 1);
         assertEquals(edgeMappings.get(2).size(), 2);
@@ -32,15 +34,62 @@ class BellmanFordTest {
         }
     }
 
+    /**
+     * Tests if the algorithm correctly recognizes the presence of a negative cycle in the input graph
+     */
     @Test
-    void testForNegativeCycle() throws FileNotFoundException {
+    void testForNegativeCycle() {
         initializeBMFord
-                ("/home/chris/WorkSpace/Java/JohnsonAPSP/src/main/test/testinput/bellmanford/negativecycle.txt");
+                (System.getProperty("user.dir") + "/src/main/test/testinput/bellmanford/negativecycle.txt");
         assertFalse(bmFord.calculateShortestPaths(0));
     }
 
-    private void initializeBMFord(String filePath) throws FileNotFoundException {
-        this.bmFord = new BellmanFord(filePath, true);
+    /**
+     * Tests if the algorithm correctly recognizes the absence of a negative cycle in the input graph
+     */
+    @Test
+    void testForNoNegativeCycle() {
+        initializeBMFord(System.getProperty("user.dir") + "/src/main/test/testinput/bellmanford/test1.txt");
+        assertTrue(bmFord.calculateShortestPaths(0));
+    }
+
+    /**
+     * Tests if correct shortest paths are computed using test1.txt as input
+     */
+    @Test
+    void testShortestPathLengths() {
+        initializeBMFord(System.getProperty("user.dir") + "/src/main/test/testinput/bellmanford/test1.txt");
+        bmFord.calculateShortestPaths(0);
+        Map<Integer, Integer> shortestPathLengths = bmFord.getShortestPathLengths();
+        assertEquals((int) shortestPathLengths.get(1), -1);
+        assertEquals((int) shortestPathLengths.get(2), -3);
+        assertEquals((int) shortestPathLengths.get(3), 0);
+        assertEquals((int) shortestPathLengths.get(4), 0);
+    }
+
+    /* Tests if correct shortest paths are computed using test2.txt as input */
+    @Test
+    void testShortestPathLengthsTwo() {
+        initializeBMFord(System.getProperty("user.dir") + "/src/main/test/testinput/bellmanford/test2.txt");
+        bmFord.calculateShortestPaths(0);
+        Map<Integer, Integer> shortestPathLengths = bmFord.getShortestPathLengths();
+        assertEquals((int) shortestPathLengths.get(1), 0);
+        assertEquals((int) shortestPathLengths.get(2), -3);
+        assertEquals((int) shortestPathLengths.get(3), 0);
+        assertEquals((int) shortestPathLengths.get(4), -10);
+        assertEquals((int) shortestPathLengths.get(5), 0);
+    }
+
+    /**
+     * Initializes a new BellmanFord object using an input graph
+     * @param filePath the path to the input graph file
+     */
+    private void initializeBMFord(String filePath) {
+        try {
+            this.bmFord = new BellmanFord(filePath, true);
+        } catch (FileNotFoundException e) {
+            fail("File not found...");
+        }
         this.edgeMappings = bmFord.getEdgeMappings();
         this.edgeCosts = bmFord.getEdgeToCost();
         this.reverseMappings = bmFord.getReverseEdgeMappings();

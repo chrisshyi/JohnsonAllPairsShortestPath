@@ -1,5 +1,6 @@
 package main.java;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.Arrays;
 import java.util.List;
@@ -17,7 +18,7 @@ public class Johnson {
         int shortestShortest = Integer.MAX_VALUE;
 
         for (String file : graphFiles) {
-            String filePath = "/home/chris/WorkSpace/Java/JohnsonAPSP/" + file;
+            String filePath = System.getProperty("user.dir") + File.separator + file;
             BellmanFord  bmFord
                     = new BellmanFord(filePath, true);
 
